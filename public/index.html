@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark"><title>Codex Monitor</title>
+  <script src="./open-local.js"></script>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css">
+  <script src="./app.js" type="module"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="brand"><div class="brand-mark"><img src="./icon.svg" width="38" height="38" alt=""></div><div><h1>Codex <span>Monitor</span></h1><p>Every action. A little more visible.</p></div></div>
+      <div class="header-actions"><button id="motion" class="motion-button" aria-pressed="true" title="Toggle decorative motion and animated event trails">Motion on</button><div class="connection" id="connection" role="status"><i></i><span>Connecting</span></div></div>
+    </header>
+    <section class="session-bar" aria-label="Session controls">
+      <div class="project"><span class="eyebrow">WORKSPACE</span><strong id="project">Waiting for a session</strong></div>
+      <label class="session-picker"><span class="eyebrow">FOLLOW SESSION</span><select id="session" aria-label="Session"><option value="auto">Most recently active</option></select></label>
+      <button id="pause" class="button" title="Pause the display; Codex continues working">Pause view</button>
+      <button id="test-tour" class="button">Test all events</button>
+    </section>
+    <section id="test-banner" class="test-banner" hidden aria-label="Simulated event test">
+      <div><strong>SIMULATED TEST</strong><span id="test-stage" role="status"></span></div>
+      <div><span id="test-time"></span><button id="test-again" class="button" hidden>Run again</button></div>
+      <progress id="test-progress" max="116" value="0" aria-label="Test progress"></progress>
+    </section>
+    <div class="workspace">
+      <section class="map-panel" aria-label="Live activity map">
+        <div class="map-heading"><div><span class="eyebrow">LIVE ACTIVITY</span><h2 id="state-label">Waiting for local events</h2></div><span class="stream-status"><i></i><span id="active-stations">Waiting</span></span></div>
+        <div class="map-wrap"><svg id="map" viewBox="0 0 720 650" aria-label="Codex connected to ten activity stations"></svg></div>
+        <div class="legend"><span><i class="dot live"></i>Active</span><span><i class="dot done"></i>Completed</span><span><i class="dot error"></i>Error reported</span><span class="hint">Select a station to filter</span></div>
+      </section>
+      <section class="feed-panel" aria-label="Rolling activity feed">
+        <div class="now-line"><span class="now-dot"></span><strong id="now-station">Waiting</strong><span id="now-detail">Events will appear here</span><span id="now-context"></span></div>
+        <div class="feed-heading"><div><span class="eyebrow">ROLLING FEED</span><h2 id="feed-title">All stations</h2></div><div class="feed-controls"><button id="clear-filter" title="Show all stations" hidden>Reset filter</button><button id="follow-feed" hidden>Back to live ↑</button><span id="feed-mode">Newest first · repeats folded</span></div></div>
+        <div id="feed" class="feed" tabindex="0" aria-label="Activity history"><div class="empty">Looking for local Codex events…</div></div>
+        <div class="feed-bottom"><span id="last-update">Waiting for first update</span><span class="pulse-dot"></span></div>
+      </section>
+    </div>
+    <section class="metrics" aria-label="Session statistics">
+      <div><span class="eyebrow">CONTEXT · LAST REPORTED</span><strong id="context-value">—</strong><div class="metric-track"><i id="context-bar"></i></div><small id="context-detail">Waiting for usage data</small></div>
+      <div><span class="eyebrow">OBSERVED ACTIVITY</span><strong id="event-count">0</strong><small id="event-detail">Events in loaded log</small></div>
+      <div><span class="eyebrow">REPORTED ERRORS</span><strong id="error-count">0</strong><small>Tool calls or batches</small></div>
+      <div class="privacy"><span class="eyebrow">ON YOUR PC</span><strong>Local. Live. Yours.</strong><small>Names and status only. No model calls.</small></div>
+    </section>
+    <footer><span>Updates as Codex writes its local logs. Long gaps show as unconfirmed.</span><button id="about">About this map ↗</button></footer>
+  </main>
+  <dialog id="about-dialog"><h2>Your local activity map</h2><p>This companion reads Codex’s session logs on this PC and serves a small status view on 127.0.0.1. It makes no external network requests and needs no API key.</p><p>The map displays tool names, short folder/file names, website hosts, command types, counts, timing, model name and reported context usage. It does not display prompts, replies, reasoning, full commands, URL paths or tool result contents. Consecutive visits to one station fold together; select +N to expand them. Scrolling into history holds your place; Back to live resumes the rolling feed.</p><p>Events appear when the log is written, which can be delayed. Nested calls share their parent batch’s completion time; an error in a batch is marked “Batch error” because the exact failing call may be unknown. The orbit at Agents represents an agent tool call in progress, not the full lifetime of a child agent. Model rows count distinct usage reports, not timed model requests. The route line connects recent tool stations; clock hands mark calls open for at least 3 seconds. Error badges count errors in the retained feed.</p><p>Context is the last reported input-token count divided by the reported window. Counts cover the loaded log segment; large sessions load a recent segment. Codex log formats may change after app updates.</p><p>Inspired by <a href="https://github.com/alexeyw/lot-map" target="_blank" rel="noreferrer">alexeyw/lot-map</a>. Built independently for Codex on Windows.</p><form method="dialog"><button class="button">Got it</button></form></dialog>
+</body></html>

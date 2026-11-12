@@ -1,0 +1,17 @@
+node_modules/
+dist/
+backups/
+.env
+.env.*
+!.env.example
+.codex/
+sessions/
+*.jsonl
+*.log
+*.lnk
+*.url
+*.zip
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini

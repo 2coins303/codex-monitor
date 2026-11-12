@@ -1,0 +1,15 @@
+{
+  "name": "codex-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A local live activity map and rolling feed for Codex sessions.",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.mjs",
+    "open": "node launcher.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check:release": "node scripts/check-release.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
