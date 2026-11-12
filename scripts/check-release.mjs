@@ -14,7 +14,7 @@ const failures=[];
 for(const name of files){
   if(!allowed.has(name)){failures.push(`Unexpected release file: ${name}`);continue;}
   if(!fs.existsSync(path.join(root,name))){failures.push(`Missing release file: ${name}`);continue;}
-  if(/\.(png|jpg|ico)$/.test(name))continue;
+  if(/\.(png|jpg|ico|gif|mp4)$/.test(name))continue;
   const text=fs.readFileSync(path.join(root,name),'utf8');
   const rules=[
     ['personal home directory',/(?:[A-Z]:[\\/]+Users[\\/]+(?!Public[\\/]|Default[\\/])|\/Users\/|\/home\/[a-z][a-z0-9_-]*\/)/i],

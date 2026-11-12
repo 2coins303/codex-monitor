@@ -1,114 +1,95 @@
 # Codex Monitor
 
-A live map of your local Codex activity, with an animated rolling feed that refreshes every **500 ms**. Runs on your own computer, reads your own session logs, and makes no AI calls.
+A local companion for Codex: watch tools, files, web activity, and agent calls move around a live map. The rolling feed underneath refreshes every **500 ms**, groups repeated activity, and shows short names and timing. No API key, runtime dependencies, or model calls.
 
-![Codex Monitor showing simulated activity](docs/demo.jpg)
+![Animated Codex Monitor demo](docs/demo.gif)
 
-*Preview uses simulated events only.*
+Demo data only, captured from the running app and played at 4× speed. [Watch the video](docs/demo.mp4) · [Full screenshot](docs/demo.jpg).
 
-## Get started
+## Install
 
-Requires **Node.js 22 or newer** and a local Codex installation that writes session logs. A supported [Node.js LTS release](https://nodejs.org/) is recommended. No API key, account connection, npm dependencies, or build step is needed.
+Download the project with **Code → Download ZIP** and extract it. Install [Node.js 22 or newer](https://nodejs.org/) if needed, then:
 
-1. Select **Code → Download ZIP** on this repository, then extract the ZIP to a permanent folder. You can also clone the repository with Git.
-2. On **Windows**, double-click **Start.cmd**. It starts the local service and opens your browser.
-3. On **macOS or Linux**, open a terminal in the extracted folder and run `npm run open`.
-4. Start a local Codex conversation. Select it under **Follow session** to see its activity.
-
-The default address is **http://127.0.0.1:43187**. The monitor discovers sessions under your own home folder's `.codex/sessions` directory. If your Codex sessions are elsewhere, see [configuration](#configuration).
-
-### Windows desktop icon
-
-Double-click **Create Desktop Shortcut.vbs** once. It creates a **Codex Monitor** shortcut with the included monitor icon and a hidden launcher. Keep the project folder in the same location afterward.
-
-If Windows Script Host or VBScript is unavailable on your computer, use **Start.cmd** or `npm run open`. No PowerShell policy change is needed.
-
-### Foreground mode
+- **Windows:** double-click **Start.cmd**. For the included desktop icon, run **Create Desktop Shortcut.vbs** once.
+- **macOS / Linux:** open a terminal in the extracted folder and run:
 
 ```sh
-npm start
+npm run open
 ```
 
-Open the address printed in your terminal. Press **Ctrl+C** in that terminal to stop the server. `Start.cmd`, the desktop shortcut, and `npm run open` use a background server that remains running after you close the browser and stops when your computer restarts. They reuse an existing healthy server on the configured port. Nothing is added to system startup.
+Your browser opens at **http://127.0.0.1:43187**. Start a local Codex chat and choose it under **Follow session**. The app finds your own `.codex/sessions` directory automatically. [Setup details and troubleshooting](docs/setup.md).
 
-## What you can see
+**Test all events** runs a 116-second simulation, including grouped calls, parallel work, context warnings, and two expected errors. You can try it without Codex installed.
 
-- Ten stations: You, Model, Memory, Files, Shell, Network, Browser, Agents, Skills, and Hooks.
-- Outbound and returning pulses, station counts, recent tool routes, and clocks for calls open longer than three seconds.
-- A rolling feed below the map. Consecutive calls at the same station fold into a `+N` row; click it to expand the individual calls.
-- Short folder/file names, website hosts, command types, skill names, elapsed time, errors, and model changes.
-- Last-reported context usage, with amber at 70% and red at 90%.
+## Updating
 
-Scroll back in the feed to hold your place. **Back to live** returns to the newest rows. Select a station to filter the feed. **Pause view** freezes the display; Codex continues working. **Motion on/off** controls animation and respects the operating system's reduced-motion preference.
+Download and extract the new version, then restart the local service. Git users can update their clean checkout with:
 
-### Try the demo
+```sh
+git pull --ff-only
+```
 
-Select **Test all events** to run a clearly labeled 116-second simulation of all ten stations, grouped calls, parallel activity, two expected errors, model changes, context compaction, and recovery. It works even without Codex installed. **Exit test** returns to your real session. The demo never writes into Codex's logs.
+With `npm start`, stop the old server using **Ctrl+C**, update, and run it again. A background launcher reuses a running server, so restart that server or your computer to load backend updates. If the project folder moved, recreate the desktop shortcut. See [CHANGELOG.md](CHANGELOG.md).
 
-## Configuration
+## Stations
 
-Set environment variables before launching. No `.env` loader is included.
+| Station | Observed activity |
+| --- | --- |
+| You | A turn begins, or a tool asks for input |
+| Model | Distinct usage reports, model changes, and turn completion |
+| Memory | Recognizable memory tools and context compaction |
+| Files | File tools, patches, images, and recognized file-reading commands |
+| Shell | Other shell commands and unclassified tools |
+| Network | Web requests, searches, connected services, and recognized network commands |
+| Browser | Browser and computer-use tools |
+| Agents | Agent creation, messages, waits, and other agent tool calls |
+| Skills | Recognizable skill tools or reading a skill file |
+| Hooks | Tool events identifiable as hooks |
 
-| Variable | Default | Purpose |
+These categories come from the local log's tool names and limited argument inspection. They describe observed calls, not everything a program might do internally.
+
+## Reading the map
+
+- **Pulses** travel toward a station when work starts and return when it finishes. In-progress work keeps moving; errors appear in red.
+- **Spokes and routes** show where work has gone. Spokes grow with usage; a curved trail connects recent tool stations.
+- **Clock hands** appear after a call stays open for three seconds. Agent tool calls also animate a small orbit at the Agents station.
+- **Context** is the last reported token usage. The center ring becomes amber at 70% and red at 90%.
+- **The rolling feed** puts new activity at the top. A `+N` button expands repeated consecutive visits to one station. Scroll back to hold your position; **Back to live** resumes following the newest activity.
+- **Controls** let you pin a session, filter by station, pause the display, or turn motion off. Reduced-motion system settings are respected.
+
+| Parallel activity | Agent tool call | Context warning |
 | --- | --- | --- |
-| `CODEX_HOME` | `.codex` under your home directory | Base directory for Codex data |
-| `CODEX_MAP_SESSIONS` | `CODEX_HOME/sessions` | Override the sessions directory directly |
-| `CODEX_MAP_PORT` | `43187` | Local port, from 1024 through 65535 |
+| ![Three stations at work](docs/parallel.jpg) | ![An agent tool call](docs/agents.jpg) | ![Context warning and reported errors](docs/context-warning.jpg) |
 
-PowerShell example:
+Codex's log data differs from Claude Code's event API. Model rows represent usage reports, agent orbits cover tool-call duration, and nested calls share their parent batch's completion time. [Full limitations](PRIVACY.md#limitations).
 
-```powershell
-$env:CODEX_MAP_SESSIONS = 'D:\Codex\sessions'
-$env:CODEX_MAP_PORT = '43188'
-node launcher.mjs
-```
+## Options
 
-macOS/Linux example:
+Set these environment variables before opening the monitor:
 
-```sh
-CODEX_MAP_SESSIONS="$HOME/.codex/sessions" CODEX_MAP_PORT=43188 node launcher.mjs
-```
+| Variable | Default | Changes |
+| --- | --- | --- |
+| `CODEX_HOME` | `.codex` under your home folder | Codex's base data directory |
+| `CODEX_MAP_SESSIONS` | `CODEX_HOME/sessions` | The session-log directory directly |
+| `CODEX_MAP_PORT` | `43187` | The localhost port, 1024–65535 |
 
-Use the launcher or printed address when selecting a custom port. Opening `public/index.html` directly redirects to the default port.
+There is no `.env` loader. [Configuration examples](docs/setup.md#configuration).
 
-## Privacy and scope
+## What stays local
 
-The server listens only on **127.0.0.1**, checks the request Host and Origin, and serves a fixed set of assets. The app has no external frontend assets, analytics, model calls, or remote uploads. It does not modify Codex's settings or logs.
+The server listens only on `127.0.0.1`. It reads local logs without changing them. It sends the browser short names, status, counts, timing, and context usage; it excludes prompts, replies, reasoning, full commands, URL paths, and tool-result contents. It makes no external requests and adds nothing to your conversations. [Privacy details](PRIVACY.md) · [Security](SECURITY.md).
 
-Prompts, replies, reasoning, full commands, URL paths, and tool-result contents are not sent to the browser. The local parser examines tool arguments to identify categories and short names, and examines result status fields to detect failures. Short file names, hosts, workspace names, session identifiers, model names, and timing remain visible locally; these names can still be sensitive when sharing your screen.
+The files and previews in this repository contain only application code, generated artwork, generic documentation, and synthetic test data. No personal logs or real-session screenshots are included.
 
-This repository contains application code, generated artwork, generic documentation, and synthetic tests/demo data. It contains no live session logs, personal screenshots, or installed desktop shortcuts.
-
-This is an independent project, not an official OpenAI product. The concept is inspired by [alexeyw/lot-map](https://github.com/alexeyw/lot-map); this implementation is independent and does not copy its source code.
-
-## Limitations
-
-- Codex's internal log format can change. Events appear when Codex writes them, which may lag behind the work. The 500 ms refresh does not make delayed log records arrive sooner.
-- This is a companion browser window, not a pane inside Codex. Remote-only conversations cannot be monitored unless their logs are available locally.
-- Model rows count distinct usage reports, not timed model requests. Context is the last reported input-token count divided by the reported window.
-- Agent orbits represent agent tool calls in progress, not the entire lifetime of child agents. Hooks and skills light up only when their activity is identifiable in the log.
-- Nested calls share their parent batch's completion time. A batch error does not identify which nested call failed.
-- A call with no completion record becomes unconfirmed after 90 seconds. An interrupted turn leaves unmatched calls marked unknown.
-- Large sessions load the most recent 6 MiB; counts cover the loaded portion. The UI retains 160 events and shows up to 60 grouped feed rows. Error badges count errors in retained events.
-- The desktop launchers have been exercised on Windows. Cross-platform Node tests run through GitHub Actions; macOS/Linux desktop integration may differ.
-
-## Troubleshooting
-
-**No sessions found:** start a local Codex chat and check `CODEX_HOME` or `CODEX_MAP_SESSIONS`. You can still run the simulated tour.
-
-**The wrong chat is active:** choose a specific session. “Most recently active” follows the newest log file timestamp.
-
-**Port occupied or page cannot connect:** run `npm start` to see the error, or choose another `CODEX_MAP_PORT`. Avoid opening the HTML file directly when the service is stopped.
-
-**Desktop shortcut stopped working:** the project folder may have moved. Remove or rename the old shortcut and run **Create Desktop Shortcut.vbs** from the new location.
-
-## Development
+## Developing
 
 ```sh
 npm test
 npm run check:release
 ```
 
-There are no third-party runtime or test dependencies. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute without sharing private session data. The Node test matrix covers Windows, macOS, and Linux on Node 22, 24, and 26.
+No dependency install or build step is required. Automated checks cover the parser, privacy projection, grouped feed, simulation, configuration, and local HTTP boundary. The CI matrix runs on Windows, macOS, and Linux with Node 22, 24, and 26. [Contributing](CONTRIBUTING.md).
 
-License: [MIT](LICENSE). The included icon was generated with an image-generation tool; see [asset notes](docs/assets.md).
+## License and credit
+
+[MIT](LICENSE). Inspired by [alexeyw/lot-map](https://github.com/alexeyw/lot-map), with an independent implementation for Codex. Not an official OpenAI product. [Artwork details](docs/assets.md).
