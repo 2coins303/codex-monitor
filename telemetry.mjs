@@ -206,25 +206,23 @@ export class Session {
 
 export function discover(root) {
   const files = [];
-  try {
-    const years = fs.readdirSync(root).filter(n => /^\d{4}$/.test(n)).sort().reverse();
-    outer: for (const year of years) {
-      const yearDir = path.join(root, year);
-      const months = fs.readdirSync(yearDir).filter(n => /^\d{2}$/.test(n)).sort().reverse();
-      for (const month of months) {
-        const monthDir = path.join(yearDir, month);
-        const days = fs.readdirSync(monthDir).filter(n => /^\d{2}$/.test(n)).sort().reverse();
-        for (const day of days) {
-          const dir = path.join(monthDir, day);
-          for (const name of fs.readdirSync(dir)) {
-            const match = name.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$/i);
-            if (!match) continue;
-            try { const file = path.join(dir, name); files.push({ id: match[1], file, modified: fs.statSync(file).mtimeMs }); } catch {}
-          }
-          if (files.length >= 60) break outer;
+  const entries = dir => { try { return fs.readdirSync(dir, {withFileTypes:true}); } catch { return []; } };
+  const directories = (dir, pattern) => entries(dir).filter(e=>e.isDirectory()&&pattern.test(e.name)).map(e=>e.name);
+  for (const year of directories(root, /^\d{4}$/)) {
+    const yearDir = path.join(root, year);
+    for (const month of directories(yearDir, /^\d{2}$/)) {
+      const monthDir = path.join(yearDir, month);
+      for (const day of directories(monthDir, /^\d{2}$/)) {
+        const dir = path.join(monthDir, day);
+        for (const entry of entries(dir)) {
+          if (!entry.isFile()) continue;
+          const name = entry.name;
+          const match = name.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$/i);
+          if (!match) continue;
+          try { const file = path.join(dir, name); files.push({ id: match[1], file, modified: fs.statSync(file).mtimeMs }); } catch {}
         }
       }
     }
-  } catch {}
-  return files.sort((a, b) => b.modified - a.modified).slice(0, 40);
+  }
+  return files.sort((a, b) => b.modified - a.modified || a.id.localeCompare(b.id)).slice(0, 40);
 }

@@ -30,6 +30,7 @@
   "public/icon.svg",
   "public/index.html",
   "public/open-local.js",
+  "public/session.js",
   "public/style.css",
   "replay.mjs",
   "scripts/check-release.mjs",
@@ -40,5 +41,6 @@
   "test/feed.test.mjs",
   "test/replay.test.mjs",
   "test/server.test.mjs",
+  "test/session.test.mjs",
   "test/telemetry.test.mjs"
 ]

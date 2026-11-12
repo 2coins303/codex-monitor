@@ -36,6 +36,8 @@ h1 span { font-weight: 400; color: #98a6bb; margin-left: 5px; }
 .session-picker select { background: transparent; border: 0; color: #acbcd1; margin: 5px 0 0 -4px; padding: 3px 22px 3px 0; font-size: 11px; max-width: 295px; }
 .session-picker option { background: #14202e; }
 .session-picker select:disabled { opacity: .45; }
+#session-status { display: block; margin-top: 4px; color: #8dbfae; font-size: 9px; }
+#session-status.pinned { color: var(--amber); }
 .button { background: #ffffff05; color: #bfcddd; border: 1px solid #ffffff13; border-radius: 8px; font-size: 11px; padding: 10px 13px; white-space: nowrap; }
 .button:hover { background: #ffffff0c; border-color: #ffffff28; }
 #test-tour { color: #b8efd7; background: linear-gradient(130deg, #294e405a, #1c3d3550); border-color: #8ef0c52b; box-shadow: inset 0 1px #ffffff06; }

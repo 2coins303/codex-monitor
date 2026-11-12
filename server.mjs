@@ -11,12 +11,15 @@ const {sessionsRoot,port}=readConfig();
 const allowedHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
 const cache = new Map();
 let catalog = [], lastScan = 0;
-function scan() {
-  if (Date.now() - lastScan > 3000) {
+function scan(force = false) {
+  if (force || Date.now() - lastScan >= 500) {
     catalog = discover(sessionsRoot); lastScan = Date.now();
     for (const [id] of cache) if (!catalog.some(s => s.id === id)) cache.delete(id);
   }
 }
+scan(true);
+// Discover chats even while the view is paused, hidden, or showing the demo.
+setInterval(() => scan(true), 500).unref();
 function getSession(id) {
   scan();
   const entry = catalog.find(s => s.id === id) || catalog[0];
@@ -33,6 +36,7 @@ const staticFiles = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
   ['/feed.js', ['feed.js', 'text/javascript; charset=utf-8']],
+  ['/session.js', ['session.js', 'text/javascript; charset=utf-8']],
   ['/open-local.js', ['open-local.js', 'text/javascript; charset=utf-8']],
   ['/style.css', ['style.css', 'text/css; charset=utf-8']],
   ['/icon.svg', ['icon.svg', 'image/svg+xml']]
@@ -50,7 +54,7 @@ const server = http.createServer((req, res) => {
   try { url = new URL(req.url, `http://127.0.0.1:${port}`); }
   catch { res.writeHead(400);res.end('Invalid URL');return; }
   if (url.pathname === '/api/health') {
-    res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ app: 'codex-activity-map', version: '1.0.0' })); return;
+    res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ app: 'codex-activity-map', version: '1.0.1' })); return;
   }
   if (url.pathname === '/api/state') {
     const state = getSession(url.searchParams.get('session'));

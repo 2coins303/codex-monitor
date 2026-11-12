@@ -15,7 +15,8 @@
     </header>
     <section class="session-bar" aria-label="Session controls">
       <div class="project"><span class="eyebrow">WORKSPACE</span><strong id="project">Waiting for a session</strong></div>
-      <label class="session-picker"><span class="eyebrow">FOLLOW SESSION</span><select id="session" aria-label="Session"><option value="auto">Most recently active</option></select></label>
+      <label class="session-picker"><span class="eyebrow">FOLLOW SESSION</span><select id="session" aria-label="Session" aria-describedby="session-status"><option value="auto">Auto-follow active chats</option></select><small id="session-status" role="status">Auto-follow on · checks every 500 ms</small></label>
+      <button id="auto-follow" class="button" hidden>Resume auto-follow</button>
       <button id="pause" class="button" title="Pause the display; Codex continues working">Pause view</button>
       <button id="test-tour" class="button">Test all events</button>
     </section>

@@ -7,7 +7,7 @@ Requires **Node.js 22 or newer** and a local Codex installation that writes sess
 1. Select **Code → Download ZIP** on this repository, then extract the ZIP to a permanent folder. You can also clone the repository with Git.
 2. On **Windows**, double-click **Start.cmd**. It starts the local service and opens your browser.
 3. On **macOS or Linux**, open a terminal in the extracted folder and run `npm run open`.
-4. Start a local Codex conversation. Select it under **Follow session** to see its activity.
+4. Start a local Codex conversation. **Auto-follow active chats** detects its local log and switches automatically, checking every 500 ms.
 
 The default address is **http://127.0.0.1:43187**. The monitor discovers sessions under your own home folder's `.codex/sessions` directory. If your Codex sessions are elsewhere, see [configuration](#configuration).
 
@@ -55,7 +55,9 @@ Use the launcher or printed address when selecting a custom port. Opening `publi
 
 **No sessions found:** start a local Codex chat and check `CODEX_HOME` or `CODEX_MAP_SESSIONS`. You can still run the simulated tour.
 
-**The wrong chat is active:** choose a specific session. “Most recently active” follows the newest log file timestamp.
+**A new chat is not appearing:** leave **Auto-follow active chats** selected, or click **Resume auto-follow** if you pinned a chat. Send the first message so Codex creates its local log. New and resumed chats are discovered every 500 ms, including in new date folders; the most recently modified log wins when multiple chats are active. Discovery continues while paused or testing, and returning to a hidden tab triggers an immediate refresh. The browser may throttle painting in background tabs.
+
+**The wrong chat is active:** selecting a specific session pins that view intentionally and shows a pinned notice. **Resume auto-follow** removes the pin. Fresh views ignore the old saved session preference; an explicit link with `follow=pinned` retains a deliberate pin on reload.
 
 **Port occupied or page cannot connect:** run `npm start` to see the error, or choose another `CODEX_MAP_PORT`. Avoid opening the HTML file directly when the service is stopped.
 

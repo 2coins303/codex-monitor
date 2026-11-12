@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 — 2026-11-11
+
+- Default to auto-follow instead of silently restoring a previously selected chat.
+- Discover new and resumed chats every 500 ms, including older conversations and newly created date folders.
+- Continue discovery while the display is paused or showing the simulation; refresh on returning to the tab.
+- Return to live monitoring five seconds after the simulated tour completes.
+- Add a visible pinned notice and a **Resume auto-follow** button. Only deliberately pinned links retain a pin.
+- Add regression coverage for new chats, resumed chats, removed sessions, and legacy session links.
+
 ## 1.0.0 — 2026-11-11
 
 - Initial public release of the local Codex activity map.

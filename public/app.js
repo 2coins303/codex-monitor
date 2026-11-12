@@ -1,4 +1,5 @@
 import {groupEvents,groupStatus,durationLabel} from './feed.js';
+import {AUTO_SESSION_LABEL,initialSession,sessionUrl} from './session.js';
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const names = {you:'You',model:'Model',memory:'Memory',files:'Files',shell:'Shell',network:'Network',browser:'Browser',agents:'Agents',skills:'Skills',hooks:'Hooks'};
@@ -60,7 +61,9 @@ const contextText=svg('text',{x:cx,y:cy+135,class:'center-caption'},'CONTEXT —
 map.append(ring,svg('text',{x:cx,y:cy-43,class:'center-kicker'},'LOCAL SESSION'),svg('text',{x:cx,y:cy-13,class:'center-name'},'Codex'),modelText,svg('rect',{x:cx-54,y:cy+24,width:108,height:26,rx:13,class:'center-pill'}),stateText,contextText);
 const wave=svg('g',{class:'core-wave','aria-hidden':'true'});
 for(let i=0;i<5;i++)wave.append(svg('rect',{x:cx-13+i*6,y:cy+61,width:3,height:7,rx:1.5,style:`--delay:${i*.14}s`}));map.append(wave);
-let current=null, seen=new Map(), selected=new URLSearchParams(location.search).get('session')||localStorage.getItem('codex-map-session')||'auto', filter=null, paused=false, connected=false;
+let current=null, seen=new Map(), selected=initialSession(location.search), filter=null, paused=false, connected=false;
+localStorage.removeItem('codex-map-session');
+history.replaceState(null,'',sessionUrl(selected));
 let lastCatalog='', lastFeed='', busy=false;
 let testStarted=null, requestGeneration=0;
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');
@@ -83,12 +86,26 @@ function setFilter(value){filter=value;lastFeed='';followFeed=true;$('feed').scr
 $('clear-filter').addEventListener('click',()=>setFilter(null));
 $('pause').addEventListener('click',()=>{paused=!paused;$('pause').textContent=paused?'Resume view':'Pause view';$('pause').setAttribute('aria-pressed',String(paused));connection(paused?'View paused':connected?'Local connection':'Reconnecting',paused||!connected);if(!paused)poll();});
 $('about').addEventListener('click',()=>$('about-dialog').showModal());
-$('session').addEventListener('change',()=>{requestGeneration++;selected=$('session').value;localStorage.setItem('codex-map-session',selected);history.replaceState(null,'',selected==='auto'?'/':`/?session=${encodeURIComponent(selected)}`);current=null;seen.clear();lastFeed='';poll();});
+function updateSessionMode(){
+  const automatic=selected==='auto';
+  $('auto-follow').hidden=automatic;
+  $('auto-follow').disabled=testStarted!==null;
+  $('session-status').textContent=testStarted!==null?'Simulation · live discovery continues':automatic?'Auto-follow on · checks every 500 ms':'Pinned to one chat · new chats still detected';
+  $('session-status').classList.toggle('pinned',!automatic);
+}
+function selectSession(value){
+  requestGeneration++;selected=value;$('session').value=selected;
+  history.replaceState(null,'',sessionUrl(selected));
+  current=null;seen.clear();lastFeed='';updateSessionMode();poll();
+}
+$('session').addEventListener('change',()=>selectSession($('session').value));
+$('auto-follow').addEventListener('click',()=>selectSession('auto'));
+updateSessionMode();
 function changeTest(start){
   requestGeneration++;testStarted=start?Date.now():null;paused=false;current=null;seen.clear();lastFeed='';
   $('pause').textContent='Pause view';$('pause').setAttribute('aria-pressed','false');
   $('test-tour').textContent=start?'Exit test':'Test all events';$('test-banner').hidden=!start;$('session').disabled=start;
-  $('test-again').hidden=true;document.body.classList.toggle('testing',start);poll();
+  $('test-again').hidden=true;document.body.classList.toggle('testing',start);updateSessionMode();poll();
 }
 $('test-tour').addEventListener('click',()=>changeTest(testStarted===null));
 $('test-again').addEventListener('click',()=>changeTest(true));
@@ -216,24 +233,30 @@ function updateDurations(){if(paused)return;for(const group of displayedGroups){
 function updateAge(){if(!current?.lastEventAt)return;const age=Math.max(0,Math.floor((Date.now()-Date.parse(current.lastEventAt))/1000));$('last-update').textContent=`Last event ${age<2?'just now':age<60?age+'s ago':Math.floor(age/60)+'m ago'}`;}
 function formatNumber(n){return n>=1000?`${(n/1000).toFixed(1)}k`:String(n);}
 async function poll(){
-  if(paused||busy)return;busy=true;
+  if(busy)return;busy=true;
   const generation=requestGeneration;
   try{
     const endpoint=testStarted!==null?`/api/test-tour?started=${testStarted}`:`/api/state${selected==='auto'?'':`?session=${encodeURIComponent(selected)}`}`;
     const response=await fetch(endpoint,{cache:'no-store',signal:AbortSignal.timeout(6000)});
     if(!response.ok)throw new Error('Connection failed');const data=await response.json();connected=true;
-    if(paused||generation!==requestGeneration)return;
-    connection(testStarted!==null?'Simulated test':'Local connection');
+    if(generation!==requestGeneration)return;
+    connection(paused?'View paused':testStarted!==null?'Simulated test':'Local connection',paused);
     if(data.tour){
-      $('test-stage').textContent=data.tour.stage;$('test-time').textContent=`${data.tour.elapsed} / ${data.tour.duration}s`;
+      if(paused)return;
+      const returnIn=Math.max(0,Math.ceil((testStarted+(data.tour.duration+5)*1000-Date.now())/1000));
+      if(data.tour.complete&&!returnIn){changeTest(false);return;}
+      $('test-stage').textContent=data.tour.stage+(data.tour.complete?` · Live monitoring resumes in ${returnIn}s`:'');$('test-time').textContent=`${data.tour.elapsed} / ${data.tour.duration}s`;
       $('test-progress').value=data.tour.elapsed;$('test-again').hidden=!data.tour.complete;
       render(data.state);return;
     }
     const catalogKey=JSON.stringify(data.sessions.map(s=>[s.id,s.project]));
-    if(catalogKey!==lastCatalog){lastCatalog=catalogKey;const opt=document.createElement('option');opt.value='auto';opt.textContent='Most recently active';const options=[opt];
+    if(catalogKey!==lastCatalog){lastCatalog=catalogKey;const opt=document.createElement('option');opt.value='auto';opt.textContent=AUTO_SESSION_LABEL;const options=[opt];
       for(const s of data.sessions){const o=document.createElement('option');o.value=s.id;o.textContent=`${new Date(s.modified).toLocaleDateString([],{month:'short',day:'numeric'})} · ${s.project} · ${s.id.slice(-6)}`;options.push(o);}
-      $('session').replaceChildren(...options);if(selected!=='auto'&&!data.sessions.some(s=>s.id===selected)){selected='auto';localStorage.removeItem('codex-map-session');history.replaceState(null,'','/');} $('session').value=selected;
+      $('session').replaceChildren(...options);
+      if(selected!=='auto'&&!data.sessions.some(s=>s.id===selected)){selectSession('auto');return;}
+      $('session').value=selected;
     }
+    if(paused)return;
     if(data.state)render(data.state);else{
       render({id:'no-session',project:'Waiting for a session',model:'Codex',state:'idle',lastEventAt:null,context:null,counts:{},errors:0,truncated:false,events:[]});
       $('state-label').textContent='No Codex sessions found';stateText.textContent='Waiting';modelText.textContent='No local session';
@@ -242,4 +265,6 @@ async function poll(){
   }catch{if(!paused&&generation===requestGeneration){connected=false;connection('Reconnecting…',true);$('state-label').textContent='Connection lost · retrying';}}
   finally{busy=false;}
 }
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
+window.addEventListener('focus',()=>poll());
 poll();setInterval(poll,500);setInterval(()=>{if(!paused){updateAge();updateDurations();}},500);

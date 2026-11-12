@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { Session, operations } from '../telemetry.mjs';
+import { Session, operations, discover } from '../telemetry.mjs';
 const row=(type,payload)=>JSON.stringify({timestamp:new Date().toISOString(),type,payload})+'\n';
 function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'codex-map-test-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));const file=path.join(dir,'session.jsonl');fs.writeFileSync(file,row('session_meta',{cwd:'C:\\Work\\Example'}));return {file,session:new Session(file,'test-session')};}
 
@@ -36,4 +36,21 @@ test('large histories load a bounded recent segment',t=>{
 test('a truncated log clears stale context, state, and error counts',t=>{
   const {file,session}=fixture(t);fs.appendFileSync(file,row('event_msg',{type:'task_started'})+row('event_msg',{type:'token_count',info:{last_token_usage:{input_tokens:500},model_context_window:1000}}));session.poll();assert.equal(session.context.percent,50);
   fs.writeFileSync(file,row('session_meta',{cwd:'C:\\Work\\Replacement'}));session.poll();const state=session.snapshot();assert.equal(state.context,null);assert.equal(state.state,'idle');assert.equal(state.events.length,0);assert.equal(state.project,'Replacement');
+});
+
+test('discovery finds resumed older chats beyond recent creation dates and skips invalid directories',t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'codex-monitor-discovery-'));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const recent=path.join(dir,'2026','12','01'),older=path.join(dir,'2025','01','01');
+  fs.mkdirSync(recent,{recursive:true});fs.mkdirSync(older,{recursive:true});
+  fs.writeFileSync(path.join(dir,'2027'),'not a directory');
+  for(let i=1;i<=65;i++){
+    const file=path.join(recent,`00000000-0000-0000-0000-${String(i).padStart(12,'0')}.jsonl`);
+    fs.writeFileSync(file,'');fs.utimesSync(file,new Date('2026-01-01'),new Date('2026-01-01'));
+  }
+  const id='00000000-0000-0000-0000-000000000999';
+  const file=path.join(older,id+'.jsonl');fs.writeFileSync(file,'');
+  fs.utimesSync(file,new Date('2026-02-01'),new Date('2026-02-01'));
+  const catalog=discover(dir);
+  assert.equal(catalog[0].id,id);assert.equal(catalog.length,40);
 });

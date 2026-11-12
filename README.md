@@ -17,9 +17,9 @@ Download the project with **Code → Download ZIP** and extract it. Install [Nod
 npm run open
 ```
 
-Your browser opens at **http://127.0.0.1:43187**. Start a local Codex chat and choose it under **Follow session**. The app finds your own `.codex/sessions` directory automatically. [Setup details and troubleshooting](docs/setup.md).
+Your browser opens at **http://127.0.0.1:43187** with **Auto-follow active chats** enabled. Start a local Codex chat: the monitor checks for new and resumed sessions every **500 ms** and follows the most recently updated log automatically. The app finds your own `.codex/sessions` directory. [Setup details and troubleshooting](docs/setup.md).
 
-**Test all events** runs a 116-second simulation, including grouped calls, parallel work, context warnings, and two expected errors. You can try it without Codex installed.
+**Test all events** runs a 116-second simulation, including grouped calls, parallel work, context warnings, and two expected errors. After showing the result for five seconds, it returns to live monitoring automatically. You can try it without Codex installed.
 
 ## Updating
 
@@ -56,6 +56,7 @@ These categories come from the local log's tool names and limited argument inspe
 - **Context** is the last reported token usage. The center ring becomes amber at 70% and red at 90%.
 - **The rolling feed** puts new activity at the top. A `+N` button expands repeated consecutive visits to one station. Scroll back to hold your position; **Back to live** resumes following the newest activity.
 - **Controls** let you pin a session, filter by station, pause the display, or turn motion off. Reduced-motion system settings are respected.
+- **Auto-follow** keeps looking for chats even while the display is paused or showing the demo. Selecting a particular session deliberately pins that tab; **Resume auto-follow** turns automatic switching back on. Fresh views and old session links default to auto-follow. A blank chat becomes visible once Codex writes its local log.
 
 | Parallel activity | Agent tool call | Context warning |
 | --- | --- | --- |
